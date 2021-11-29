@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
+    <PackageReference Include="MySql.Data" Version="8.0.27" />
+    <PackageReference Include="PdfPig" Version="0.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Moties\" />
+  </ItemGroup>
+
+</Project>
