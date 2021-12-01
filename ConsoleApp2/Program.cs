@@ -83,12 +83,14 @@ class Program
         //For all 730 moties, loop:
         //OPTIONAL: MAKE 730 RESPONSIVE
         var urlOverviewMoties = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
+        var urlOverviewMotiesBase = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
 
         for (int i = 1; i < 730; i += 15)
         {
             //increment of 15, because 15 moties per page
 
             //Create url with increment
+            urlOverviewMoties = urlOverviewMotiesBase;
             urlOverviewMoties += i;
 
             // get html page source
