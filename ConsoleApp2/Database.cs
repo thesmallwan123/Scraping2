@@ -58,6 +58,30 @@ class Database
         }
     }
 
+    public bool TruncateTable()
+    {
+        try
+        {
+            if (OpenConnection())
+            {
+                MySqlCommand sql = new MySqlCommand("TRUNCATE TABLE motie;", connection);
+                sql.ExecuteNonQuery();
+                Console.WriteLine("Succesfully trancuted table");
+            }
+            else
+            {
+                Console.WriteLine("Connection was closed");
+                return false;
+            }
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
+
     public bool InsertInto(string qr)
     {
         try

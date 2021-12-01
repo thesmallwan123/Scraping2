@@ -7,80 +7,112 @@ using System.IO;
 using System.Web;
 using System.Net;
 using UglyToad.PdfPig;
+using System.Collections.Generic;
 
 class Program
 {
-    public string dowloadToDiskURL = "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/";
-
-
     //has to be async to await the url
     public static async System.Threading.Tasks.Task Main()
     {
-
+        cleanData("C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/");
         await getData();
         Environment.Exit(0);
     }
 
+    public static void cleanData(string downloadToDiskURL)
+    {
+        //Clean map moties
+        try
+        {
+            DirectoryInfo dir = new DirectoryInfo(downloadToDiskURL);
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                file.Delete();
+            }
+            Console.WriteLine("All PDF files removed");
 
+            try
+            {
+                Database db = new Database();
+                if (db.TruncateTable())
+                {
+                    Console.WriteLine("Database Cleaned");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
+    //visiting all the motie pages and getting all the data from them
     public static async System.Threading.Tasks.Task getData()
     {
-
-        
 
         // get html page source
         var httpClient = new HttpClient();
 
+
+
+
+        /*
+        //getting the amount of all moties
         //store the html of the page in a variable
-        var pageForAmount = await httpClient.GetStringAsync("https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=");
-        var pageForAmount2 = new HtmlDocument();
-        pageForAmount2.LoadHtml(pageForAmount);
-        var nodes2 = pageForAmount2.DocumentNode.SelectSingleNode("/html/body/div[1]/div/div[2]/div/div[2]/div[1]/h2/span");
+        var pageForAmountDoctype = await httpClient.GetStringAsync("https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=");
+        var pageForAmountHTML = new HtmlDocument();
+        pageForAmountHTML.LoadHtml(pageForAmountDoctype);
+
+
         int amountMoties = int.Parse(nodes2.ToString());
+        var maxMotiesRaw = pageForAmountHTML.DocumentNode.SelectNodes("/html/body/div[1]/div/div[2]/div/div[2]/div[1]/h2/span").ToList()[0].InnerHtml;
+        string maxMotiesString = maxMotiesRaw.ToString();
 
-        //var maxMotiesRaw = docOverviewMoties.DocumentNode.SelectNodes("/html/body/div[1]/div/div[2]/div/div[2]/div[1]/h2/span").ToList()[0].InnerHtml;
+        int stringFrom = maxMotiesString.IndexOf("(") + "(".Length;
+        int stringTo = maxMotiesString.LastIndexOf(")");
+        */
 
-        for (int i = 1; i < amountMoties; i += 15)
+
+
+
+        //For all 730 moties, loop:
+        //OPTIONAL: MAKE 730 RESPONSIVE
+        var urlOverviewMoties = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
+
+        for (int i = 1; i < 730; i += 15)
         {
+            //increment of 15, because 15 moties per page
 
-
-            //Set url
-            var urlOverviewMoties = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
-            var baseUrlOverviewMoties = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
-
-            //Create url
+            //Create url with increment
             urlOverviewMoties += i;
 
             // get html page source
             await httpClient.GetStringAsync(urlOverviewMoties);
-
-
-
-            //increment of 15, because website shows 15 moties.
-            //max 730, because there are 730 total moties. NEEDS TO BE RESPONSIVE!!!
-            //store the html of the page in a variable
-            var htmlPagesOverviewMoties = await httpClient.GetStringAsync(urlOverviewMoties);
-            var docOverviewMoties = new HtmlDocument();
-            docOverviewMoties.LoadHtml(htmlPagesOverviewMoties);
-
-
-
-
+            var pageOverviewMoetiesHTML = await httpClient.GetStringAsync(urlOverviewMoties);
+            var pageOverviewMotiesDoc = new HtmlDocument();
+            pageOverviewMotiesDoc.LoadHtml(pageOverviewMoetiesHTML);
 
 
             //Each element into list
-            var nodes = docOverviewMoties.DocumentNode.SelectNodes("//html/body/div[1]/div/div[2]/div/div[3]/div[1]/div").ToList();
-            foreach (var element in nodes)
+            var allNodes = pageOverviewMotiesDoc.DocumentNode.SelectNodes("//html/body/div[1]/div/div[2]/div/div[3]/div[1]/div").ToList();
+            
+            foreach (var singleNode in allNodes)
             {
-                if (element.Attributes[0].Value.Equals("card"))
+                if (singleNode.Attributes[0].Value.Equals("card"))
                 {
                     //get part of link, to find the motie
-                    var urlSpecificMotieID = element.ChildNodes[3].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[0].Attributes[0].Value;
+                    var urlSpecificMotieID = singleNode.ChildNodes[3].ChildNodes[1].ChildNodes[1].ChildNodes[1].ChildNodes[0].Attributes[0].Value;
 
                     //get ID and DID from link
-                    int pFrom = urlSpecificMotieID.IndexOf("id=") + "id=".Length;
-                    int pTo = urlSpecificMotieID.LastIndexOf("&");
+                    int fromText = urlSpecificMotieID.IndexOf("id=") + "id=".Length;
+                    int toText = urlSpecificMotieID.LastIndexOf("&");
 
-                    string motieID = urlSpecificMotieID.Substring(pFrom, pTo - pFrom);
+                    string motieID = urlSpecificMotieID.Substring(fromText, toText - fromText);
                     string motieDID = urlSpecificMotieID.Substring(Math.Max(0, urlSpecificMotieID.Length - 10));
 
 
@@ -89,8 +121,6 @@ class Program
                     var urlSpecificMotieBase = "https://www.tweedekamer.nl";
                     var urlSpecificMotie = urlSpecificMotieBase + urlSpecificMotieID;
 
-                    Console.WriteLine(urlSpecificMotieID);
-                    Console.WriteLine(i);
                     //setup new connection
                     var htmlSpecificMotie = await httpClient.GetStringAsync(urlSpecificMotie);
 
@@ -113,6 +143,57 @@ class Program
                         //Get votes of motie
                         int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        //get who voted positive
+                        Console.WriteLine(urlSpecificMotie);
+                        string votedPositive = getVotedPositive(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[1]/table/tbody"));
+                        string votedNegative = getVotedNegative(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[2]/table/tbody"));
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        //get who voted negative
+
+
                         //get date of motie
                         var dateMotieString = docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[1]/div/div/div[2]/div/div[1]/div[2]");
                         DateTime dateMotie = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
@@ -133,13 +214,14 @@ class Program
                                 //Get omschrijving from PDF
                                 string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF);
                                 omschrijving = omschrijving.Replace("'", "''");
+                                
                                 //Write data to db
-                                WriteData(motieID, motieDID, cleanTitle, omschrijving, mensenVoor, dateMotie);
+                                WriteData(motieID, motieDID, cleanTitle, omschrijving, mensenVoor, dateMotie, votedPositive, votedNegative);
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Motie bestaat al in dictionary");
+                            Console.WriteLine("Motie is al gedownload");
                         }
                     }
                     else
@@ -150,11 +232,11 @@ class Program
 
                 }
             }
-            urlOverviewMoties = baseUrlOverviewMoties;
         }
 
     }
 
+    //Downloading the PDF to server and C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/ map
     public static bool DownloadPDF(string urlToDownloadPDF, string id, string did)
     {
         try
@@ -166,7 +248,6 @@ class Program
                     "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/" + id + "" + did + ".pdf"
                 );
             }
-            Console.WriteLine("Succes downloaded PDF!");
             return true;
         }
         catch (Exception ex)
@@ -177,11 +258,31 @@ class Program
         return false;
     }
 
+    //getting the motie from the pdf
+    public static string getOmschrijvingFromPDF(string urlToPDF)
+    {
+        using (var pdf = PdfDocument.Open(urlToPDF))
+        {
+            try
+            {
+                var otherText = "";
+                foreach (var page in pdf.GetPages())
+                {
+                    // Or the raw text of the page's content stream.
+                    otherText += string.Join(" ", page.GetWords());
+                }
+                return otherText;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return "Failed";
+            }
 
+        }
+    }
 
-
-
-
+    //Getting the date of the motie from the pdf
     public static DateTime getDateFromPDF(string urlToPDF)
     {
         using (var pdf = PdfDocument.Open(urlToPDF))
@@ -191,7 +292,7 @@ class Program
                 // Or the raw text of the page's content stream.
                 var otherText = string.Join(" ", page.GetWords());
 
-                
+
                 int pFrom = otherText.IndexOf("Voorgesteld ") + "Voorgesteld ".Length;
                 int pTo = otherText.LastIndexOf(" De Kamer, ");
 
@@ -206,7 +307,7 @@ class Program
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("PROBLEEM MET PARSEN: "+ex);
+                        Console.WriteLine("PROBLEEM MET PARSEN: " + ex);
                     }
                 }
                 else
@@ -231,52 +332,100 @@ class Program
                         Console.WriteLine();
                     }
                 }
-                               
+
             }
         }
         return DateTime.Parse("01 jan 0001");
     }
 
-
-
-
-
-    public static string getOmschrijvingFromPDF(string urlToPDF)
-    {
-        using (var pdf = PdfDocument.Open(urlToPDF))
-        {
-            try
-            {
-                var otherText = "";
-                foreach (var page in pdf.GetPages())
-                {
-                    // Or the raw text of the page's content stream.
-                    otherText += string.Join(" ", page.GetWords());
-                }
-                int pFrom = otherText.IndexOf("De Kamer, gehoord de beraadslaging, ") + "De kamer, gehoord de beraadslaging, ".Length;
-                int pTo = otherText.LastIndexOf(" en gaat over tot de orde van de dag.");
-
-                string motieDescription = otherText.Substring(pFrom, pTo - pFrom);
-                return motieDescription;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return "Failed";
-            }
-
-        }
-    }
-
-
-    public static bool WriteData(string id, string did, string title, string description, int stemmenVoor, DateTime motieDatum)
+    //Writing data to database
+    public static bool WriteData(string id, string did, string title, string description, int stemmenVoor, DateTime motieDatum, string lijstVoor, string lijstTegen)
     {
 
         Database db = new Database();
-        string query = "INSERT INTO motie (id, did, title, omschrijving, stemmenVoor, motieDatum) VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum.ToShortDateString() + "');";
+        string query = "INSERT INTO motie (id, did, title, omschrijving, stemmenVoor, motieDatum, partijVoor, partijTegen) " +
+                        "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum.ToShortDateString() + "', '" + lijstVoor + "', '" + lijstTegen +"');";
         db.InsertInto(query);
 
         return true;
+    }
+
+     
+
+
+
+
+
+
+
+    public static string getVotedPositive(HtmlNodeCollection voteTableVoor)
+    {
+        string final = "";
+
+        if (voteTableVoor != null)
+        {
+            var tableRow = voteTableVoor[0].ChildNodes;
+            foreach (var partyVotedPositive in tableRow)
+            {
+                if (partyVotedPositive.Name.Equals("tr"))
+                {
+                    foreach (var ta in partyVotedPositive.ChildNodes)
+                    {
+                        if (ta.Name.Equals("td"))
+                        {
+
+
+                            if (ta.ChildNodes[1].Name.Equals("span"))
+                            {
+                                if (!ta.ChildNodes[1].HasAttributes)
+                                {
+                                    final += ta.ChildNodes[1].InnerHtml + ", ";
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        
+
+        return final;
+    }
+
+
+    public static string getVotedNegative(HtmlNodeCollection voteTableTegen)
+    {
+        string final = "";
+        if (voteTableTegen != null)
+        {
+
+            var tableRow = voteTableTegen[0].ChildNodes;
+            foreach (var partyVotedNegative in tableRow)
+            {
+                if (partyVotedNegative.Name.Equals("tr"))
+                {
+                    foreach (var ta in partyVotedNegative.ChildNodes)
+                    {
+                        if (ta.Name.Equals("td"))
+                        {
+
+
+                            if (ta.ChildNodes[1].Name.Equals("span"))
+                            {
+                                if (!ta.ChildNodes[1].HasAttributes)
+                                {
+                                    final += ta.ChildNodes[1].InnerHtml + ", ";
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        return final;
     }
 
 }
