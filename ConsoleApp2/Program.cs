@@ -363,34 +363,33 @@ class Program
     public static string getVotedPositive(HtmlNodeCollection voteTableVoor)
     {
         string final = "";
-
         if (voteTableVoor != null)
         {
             var tableRow = voteTableVoor[0].ChildNodes;
             foreach (var partyVotedPositive in tableRow)
             {
-                if (partyVotedPositive.Name.Equals("tr"))
+                if (!partyVotedPositive.HasAttributes)
                 {
-                    foreach (var ta in partyVotedPositive.ChildNodes)
+                    if (partyVotedPositive.Name.Equals("tr"))
                     {
-                        if (ta.Name.Equals("td"))
+                        foreach (var ta in partyVotedPositive.ChildNodes)
                         {
-
-
-                            if (ta.ChildNodes[1].Name.Equals("span"))
+                            if (ta.Name.Equals("td") & ta.ChildNodes.Count > 2)
                             {
-                                if (!ta.ChildNodes[1].HasAttributes)
+
+                                if (ta.ChildNodes[1].Name.Equals("span"))
                                 {
-                                    final += ta.ChildNodes[1].InnerHtml + ", ";
+                                    if (!ta.ChildNodes[1].HasAttributes)
+                                    {
+                                        final += ta.ChildNodes[1].InnerHtml + ", ";
+                                    }
                                 }
                             }
                         }
-
                     }
                 }
             }
         }
-        
 
         return final;
     }
@@ -401,27 +400,27 @@ class Program
         string final = "";
         if (voteTableTegen != null)
         {
-
             var tableRow = voteTableTegen[0].ChildNodes;
             foreach (var partyVotedNegative in tableRow)
             {
-                if (partyVotedNegative.Name.Equals("tr"))
+                if (!partyVotedNegative.HasAttributes)
                 {
-                    foreach (var ta in partyVotedNegative.ChildNodes)
+                    if (partyVotedNegative.Name.Equals("tr"))
                     {
-                        if (ta.Name.Equals("td"))
+                        foreach (var ta in partyVotedNegative.ChildNodes)
                         {
-
-
-                            if (ta.ChildNodes[1].Name.Equals("span"))
+                            if (ta.Name.Equals("td") & ta.ChildNodes.Count > 2)
                             {
-                                if (!ta.ChildNodes[1].HasAttributes)
+
+                                if (ta.ChildNodes[1].Name.Equals("span"))
                                 {
-                                    final += ta.ChildNodes[1].InnerHtml + ", ";
+                                    if (!ta.ChildNodes[1].HasAttributes)
+                                    {
+                                        final += ta.ChildNodes[1].InnerHtml + ", ";
+                                    }
                                 }
                             }
                         }
-
                     }
                 }
             }
