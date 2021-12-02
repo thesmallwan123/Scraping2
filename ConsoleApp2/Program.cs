@@ -1,20 +1,17 @@
 ﻿using HtmlAgilityPack;
 using System;
-using MySql.Data.MySqlClient;
 using System.Linq;
 using System.Net.Http;
 using System.IO;
-using System.Web;
 using System.Net;
 using UglyToad.PdfPig;
-using System.Collections.Generic;
 
 class Program
 {
     //has to be async to await the url
     public static async System.Threading.Tasks.Task Main()
     {
-        cleanData("C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/");
+        //cleanData("C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/");
         await getData();
         Environment.Exit(0);
     }
@@ -22,28 +19,15 @@ class Program
     public static void cleanData(string downloadToDiskURL)
     {
         //Clean map moties
+        
+
         try
         {
-            DirectoryInfo dir = new DirectoryInfo(downloadToDiskURL);
-            foreach (FileInfo file in dir.GetFiles())
+            Database db = new Database();
+            if (db.TruncateTable())
             {
-                file.Delete();
+                Console.WriteLine("Database Cleaned");
             }
-            Console.WriteLine("All PDF files removed");
-
-            try
-            {
-                Database db = new Database();
-                if (db.TruncateTable())
-                {
-                    Console.WriteLine("Database Cleaned");
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
         }
         catch (Exception e)
         {
@@ -82,7 +66,7 @@ class Program
 
         //For all 730 moties, loop:
         //OPTIONAL: MAKE 730 RESPONSIVE
-        var urlOverviewMoties = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
+        var urlOverviewMoties = "";
         var urlOverviewMotiesBase = "https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=";
 
         for (int i = 1; i < 730; i += 15)
@@ -118,7 +102,6 @@ class Program
                     string motieDID = urlSpecificMotieID.Substring(Math.Max(0, urlSpecificMotieID.Length - 10));
 
 
-
                     //create new link
                     var urlSpecificMotieBase = "https://www.tweedekamer.nl";
                     var urlSpecificMotie = urlSpecificMotieBase + urlSpecificMotieID;
@@ -137,79 +120,40 @@ class Program
                     // check if votes are in
                     if (mainPageSpecificMotie != null)
                     {
-                        //Get specific data of each motie
-                        //get motietitle
-                        string UnConcattedtitle = titleSpecificMotie[0].InnerText;
-                        string cleanTitle = UnConcattedtitle.Replace("\n", "").Trim();
-
-                        //Get votes of motie
-                        int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        //get who voted positive
-                        Console.WriteLine(urlSpecificMotie);
-                        string votedPositive = getVotedPositive(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[1]/table/tbody"));
-                        string votedNegative = getVotedNegative(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[2]/table/tbody"));
-                        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        //get who voted negative
-
-
-                        //get date of motie
-                        var dateMotieString = docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[1]/div/div/div[2]/div/div[1]/div[2]");
-                        DateTime dateMotie = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
-
-                        //Go download pdf of motie
-                        var urlDownloadPDFButton = docSpecificMotie.DocumentNode.SelectSingleNode("/html/body/div[1]/div/section[1]/div/div/div[1]/div/a");
-                        string urlToDownloadPDF = urlSpecificMotieBase + urlDownloadPDFButton.Attributes[1].Value;
-
-
                         string urlToLocalPDF = "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/" + motieID + "" + motieDID + ".pdf";
 
-                        //downloadpdf
+
+                        //If file is not downloaded yet
                         if (!File.Exists(urlToLocalPDF))
                         {
+                            //Get specific data of each motie
+
+                            //get motietitle
+                            string UnConcattedtitle = titleSpecificMotie[0].InnerText;
+                            string cleanTitle = UnConcattedtitle.Replace("\n", "").Trim();
+
+                            //Get votes of motie
+                            int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
+
+
+
+                            //get who voted positive
+                            string votedPositive = getVotedPositive(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[1]/table/tbody"));
+
+                            //get who voted negative
+                            string votedNegative = getVotedNegative(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[2]/table/tbody"));
+
+
+
+                            //get date of motie
+                            var dateMotieString = docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[1]/div/div/div[2]/div/div[1]/div[2]");
+                            DateTime dateMotie = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
+
+                            //Go download pdf of motie
+                            var urlDownloadPDFButton = docSpecificMotie.DocumentNode.SelectSingleNode("/html/body/div[1]/div/section[1]/div/div/div[1]/div/a");
+                            string urlToDownloadPDF = urlSpecificMotieBase + urlDownloadPDFButton.Attributes[1].Value;
+                            
+                            
                             if (DownloadPDF(urlToDownloadPDF, motieID, motieDID))
                             {
 
@@ -273,7 +217,7 @@ class Program
                     // Or the raw text of the page's content stream.
                     otherText += string.Join(" ", page.GetWords());
                 }
-                return otherText;
+;               return otherText.Replace("'", "''");
             }
             catch (Exception e)
             {
