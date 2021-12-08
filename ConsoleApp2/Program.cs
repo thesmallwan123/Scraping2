@@ -5,13 +5,14 @@ using System.Net.Http;
 using System.IO;
 using System.Net;
 using UglyToad.PdfPig;
+using System.Globalization;
 
 class Program
 {
     //has to be async to await the url
     public static async System.Threading.Tasks.Task Main()
     {
-        //cleanData("C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/");
+        cleanData("C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/");
         await getData();
         Environment.Exit(0);
     }
@@ -19,8 +20,27 @@ class Program
     public static void cleanData(string downloadToDiskURL)
     {
         //Clean map moties
-        
+        try
+        {
+            DirectoryInfo di = new DirectoryInfo(downloadToDiskURL);
 
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+            }
+            if (!Directory.EnumerateFileSystemEntries(downloadToDiskURL).Any())
+            {
+                Console.WriteLine("All files removed");
+            }
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+
+
+
+        //Clean DB
         try
         {
             Database db = new Database();
@@ -41,27 +61,6 @@ class Program
 
         // get html page source
         var httpClient = new HttpClient();
-
-
-
-
-        /*
-        //getting the amount of all moties
-        //store the html of the page in a variable
-        var pageForAmountDoctype = await httpClient.GetStringAsync("https://www.tweedekamer.nl/kamerstukken/moties?qry=klimaat&fld_prl_kamerstuk=Moties&fld_tk_categorie=kamerstukken&sta=");
-        var pageForAmountHTML = new HtmlDocument();
-        pageForAmountHTML.LoadHtml(pageForAmountDoctype);
-
-
-        int amountMoties = int.Parse(nodes2.ToString());
-        var maxMotiesRaw = pageForAmountHTML.DocumentNode.SelectNodes("/html/body/div[1]/div/div[2]/div/div[2]/div[1]/h2/span").ToList()[0].InnerHtml;
-        string maxMotiesString = maxMotiesRaw.ToString();
-
-        int stringFrom = maxMotiesString.IndexOf("(") + "(".Length;
-        int stringTo = maxMotiesString.LastIndexOf(")");
-        */
-
-
 
 
         //For all 730 moties, loop:
@@ -147,7 +146,8 @@ class Program
 
                             //get date of motie
                             var dateMotieString = docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[1]/div/div/div[2]/div/div[1]/div[2]");
-                            DateTime dateMotie = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
+                            DateTime dateMotieReversed = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
+                            string dateMotie = dateMotieReversed.ToString("yyyy-MM-dd");
 
                             //Go download pdf of motie
                             var urlDownloadPDFButton = docSpecificMotie.DocumentNode.SelectSingleNode("/html/body/div[1]/div/section[1]/div/div/div[1]/div/a");
@@ -159,8 +159,10 @@ class Program
 
                                 //Get omschrijving from PDF
                                 string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF);
-                                omschrijving = omschrijving.Replace("'", "''");
-                                
+                                omschrijving = omschrijving.Substring(omschrijving.IndexOf("De Kamer, gehoord de beraadslaging,"));
+                                omschrijving = omschrijving.Remove(omschrijving.IndexOf("en gaat over tot de orde van de dag.") +36);
+
+
                                 //Write data to db
                                 WriteData(motieID, motieDID, cleanTitle, omschrijving, mensenVoor, dateMotie, votedPositive, votedNegative);
                             }
@@ -285,12 +287,12 @@ class Program
     }
 
     //Writing data to database
-    public static bool WriteData(string id, string did, string title, string description, int stemmenVoor, DateTime motieDatum, string lijstVoor, string lijstTegen)
+    public static bool WriteData(string id, string did, string title, string description, int stemmenVoor, string motieDatum, string lijstVoor, string lijstTegen)
     {
 
         Database db = new Database();
         string query = "INSERT INTO motie (id, did, title, omschrijving, stemmenVoor, motieDatum, partijVoor, partijTegen) " +
-                        "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum.ToShortDateString() + "', '" + lijstVoor + "', '" + lijstTegen +"');";
+                        "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum + "', '" + lijstVoor + "', '" + lijstTegen +"');";
         db.InsertInto(query);
 
         return true;
