@@ -9,11 +9,15 @@ using System.Globalization;
 
 class Program
 {
+   
     //has to be async to await the url
     public static async System.Threading.Tasks.Task Main()
     {
-        cleanData("C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/");
-        await getData();
+        string DiskLink = "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/";
+
+        //cleanData(DiskLink);
+        await getData(DiskLink);
+        Console.WriteLine("Scraping has succeeded");
         Environment.Exit(0);
     }
 
@@ -56,7 +60,7 @@ class Program
     }
 
     //visiting all the motie pages and getting all the data from them
-    public static async System.Threading.Tasks.Task getData()
+    public static async System.Threading.Tasks.Task getData(string urlToLocalPDF)
     {
 
         // get html page source
@@ -119,11 +123,11 @@ class Program
                     // check if votes are in
                     if (mainPageSpecificMotie != null)
                     {
-                        string urlToLocalPDF = "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/" + motieID + "" + motieDID + ".pdf";
+                        string urlToLocalPDF2 = urlToLocalPDF + motieID + "" + motieDID + ".pdf";
 
 
                         //If file is not downloaded yet
-                        if (!File.Exists(urlToLocalPDF))
+                        if (!File.Exists(urlToLocalPDF2))
                         {
                             //Get specific data of each motie
 
@@ -158,7 +162,7 @@ class Program
                             {
 
                                 //Get omschrijving from PDF
-                                string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF);
+                                string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF2);
                                 omschrijving = omschrijving.Substring(omschrijving.IndexOf("De Kamer, gehoord de beraadslaging,"));
                                 omschrijving = omschrijving.Remove(omschrijving.IndexOf("en gaat over tot de orde van de dag.") +36);
 
