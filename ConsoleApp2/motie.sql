@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Gegenereerd op: 01 dec 2021 om 10:13
+-- Gegenereerd op: 10 dec 2021 om 09:11
 -- Serverversie: 10.1.30-MariaDB
 -- PHP-versie: 7.2.1
 
@@ -50,7 +50,7 @@ CREATE TABLE `motie` (
 -- Indexen voor tabel `motie`
 --
 ALTER TABLE `motie`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`,`did`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
