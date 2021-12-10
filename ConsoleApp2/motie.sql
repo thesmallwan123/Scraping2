@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Gegenereerd op: 10 dec 2021 om 09:11
+-- Gegenereerd op: 10 dec 2021 om 09:24
 -- Serverversie: 10.1.30-MariaDB
 -- PHP-versie: 7.2.1
 
@@ -39,7 +39,9 @@ CREATE TABLE `motie` (
   `partijVoor` varchar(256) DEFAULT NULL,
   `partijTegen` varchar(256) DEFAULT NULL,
   `geld` int(11) NOT NULL DEFAULT '0',
-  `CO2Waarde` int(11) NOT NULL DEFAULT '0'
+  `CO2Waarde` int(11) NOT NULL DEFAULT '0',
+  `reactieVoor` longtext,
+  `reactieTegen` longtext
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
