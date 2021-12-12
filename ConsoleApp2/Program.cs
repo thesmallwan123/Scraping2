@@ -15,7 +15,7 @@ class Program
     {
         string DiskLink = "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/";
 
-        //cleanData(DiskLink);
+        cleanData(DiskLink);
         await getData(DiskLink);
         Console.WriteLine("Scraping has succeeded");
         Environment.Exit(0);
@@ -117,24 +117,25 @@ class Program
 
                     // get global data tabel
                     var mainPageSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[2]/div[1]/section[1]/div[1]/div[2]/div[1]/div[1]/div[1]");
-                    var titleSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[1]/div[1]/div[1]/div[1]/div[1]/h1");
-
+                    
+                    
+                    
 
                     // check if votes are in
                     if (mainPageSpecificMotie != null)
                     {
                         string urlToLocalPDF2 = urlToLocalPDF + motieID + "" + motieDID + ".pdf";
 
+                        //get motietitle
+                        var titleSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[1]/div[1]/div[1]/div[1]/div[1]/h1");
+                        string UnConcattedtitle = titleSpecificMotie[0].InnerText;
+                        string cleanTitle = UnConcattedtitle.Replace("\n", "").Trim();
+                        cleanTitle = cleanTitle.Replace("'", "''");
 
-                        //If file is not downloaded yet
+
+                        //If file is not downloaded yet, so that we dont redo work
                         if (!File.Exists(urlToLocalPDF2))
                         {
-                            //Get specific data of each motie
-
-                            //get motietitle
-                            string UnConcattedtitle = titleSpecificMotie[0].InnerText;
-                            string cleanTitle = UnConcattedtitle.Replace("\n", "").Trim();
-
                             //Get votes of motie
                             int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
 
@@ -296,7 +297,7 @@ class Program
 
         Database db = new Database();
         string query = "INSERT INTO motie (id, did, title, omschrijving, stemmenVoor, motieDatum, partijVoor, partijTegen) " +
-                        "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum + "', '" + lijstVoor + "', '" + lijstTegen +"');";
+                        "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum + "', '" + lijstVoor + "', '" + lijstTegen + "');";
         db.InsertInto(query);
 
         return true;
