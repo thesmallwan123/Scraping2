@@ -9,7 +9,7 @@ using System.Globalization;
 
 class Program
 {
-   
+
     //has to be async to await the url
     public static async System.Threading.Tasks.Task Main()
     {
@@ -17,8 +17,8 @@ class Program
 
         //cleanData(DiskLink);
         await getData(DiskLink);
-        
-        
+
+
         Console.WriteLine("Scraping has succeeded");
         Environment.Exit(0);
     }
@@ -40,7 +40,7 @@ class Program
                 Console.WriteLine("All files removed");
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             Console.WriteLine(e.Message);
         }
@@ -87,7 +87,7 @@ class Program
 
             //Each element into list
             var allNodes = pageOverviewMotiesDoc.DocumentNode.SelectNodes("//html/body/div[1]/div/div[2]/div/div[3]/div[1]/div").ToList();
-            
+
             foreach (var singleNode in allNodes)
             {
                 if (singleNode.Attributes[0].Value.Equals("card"))
@@ -116,11 +116,11 @@ class Program
                     // get global data tabel
                     var mainPageSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[2]/div[1]/section[1]/div[1]/div[2]/div[1]/div[1]/div[1]");
                     var titleSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[1]/div[1]/div[1]/div[1]/div[1]/h1");
-                   
+
                     // check if votes are in
                     if (mainPageSpecificMotie != null)
                     {
-                        string urlToLocalPDF2 = urlToLocalPDF+ "" + motieID + "" + motieDID + ".pdf";
+                        string urlToLocalPDF2 = urlToLocalPDF + "" + motieID + "" + motieDID + ".pdf";
 
 
                         //If file is not downloaded yet
@@ -131,142 +131,128 @@ class Program
                             //get motietitle
                             string UnConcattedtitle = titleSpecificMotie[0].InnerText;
                             string cleanTitle = UnConcattedtitle.Replace("\n", "").Trim();
-                            cleanTitle = cleanTitle.Replace("'","''");
-                            cleanTitle = string.Join(" ", cleanTitle.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
-
-                            //Get votes of motie
-                            int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
 
 
-
-                            //get who voted positive
-                            string votedPositive = getVotedPositive(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[1]/table/tbody"));
-
-                            //get who voted negative
-                            string votedNegative = getVotedNegative(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[2]/table/tbody"));
-
-
-
-                            //get date of motie
-                            var dateMotieString = docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[1]/div/div/div[2]/div/div[1]/div[2]");
-                            DateTime dateMotieReversed = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
-                            string dateMotie = dateMotieReversed.ToString("yyyy-MM-dd");
-
-                            //Go download pdf of motie
-                            var urlDownloadPDFButton = docSpecificMotie.DocumentNode.SelectSingleNode("/html/body/div[1]/div/section[1]/div/div/div[1]/div/a");
-                            string urlToDownloadPDF = urlSpecificMotieBase + urlDownloadPDFButton.Attributes[1].Value;
-                            
-                            
-                            if (DownloadPDF(urlToDownloadPDF, urlToLocalPDF2))
+                            //If file is not downloaded yet, so that we dont redo work
+                            if (!File.Exists(urlToLocalPDF2))
                             {
+                                //Get votes of motie
+                                int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
 
-                                //Get omschrijving from PDF
-                                string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF2);
-                                omschrijving = omschrijving.Substring(omschrijving.IndexOf("De Kamer, gehoord de beraadslaging,"));
-                                omschrijving = omschrijving.Remove(omschrijving.IndexOf("en gaat over tot de orde van de dag.") +36);
-                                omschrijving = omschrijving.Replace("'","''");
 
-                                //Write data to db
-                                WriteData(motieID, motieDID, cleanTitle, omschrijving, mensenVoor, dateMotie, votedPositive, votedNegative);
+
+                                //get who voted positive
+                                string votedPositive = getVotedPositive(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[1]/table/tbody"));
+
+                                //get who voted negative
+                                string votedNegative = getVotedNegative(docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[2]/div/section/div/div[2]/div/div/div/div[3]/div/div[2]/table/tbody"));
+
+
+
+                                //get date of motie
+                                var dateMotieString = docSpecificMotie.DocumentNode.SelectNodes("/html/body/div[1]/div/section[1]/div/div/div[2]/div/div[1]/div[2]");
+                                DateTime dateMotieReversed = DateTime.Parse(dateMotieString[0].ChildNodes[0].InnerText);
+                                string dateMotie = dateMotieReversed.ToString("yyyy-MM-dd");
+
+                                //Go download pdf of motie
+                                var urlDownloadPDFButton = docSpecificMotie.DocumentNode.SelectSingleNode("/html/body/div[1]/div/section[1]/div/div/div[1]/div/a");
+                                string urlToDownloadPDF = urlSpecificMotieBase + urlDownloadPDFButton.Attributes[1].Value;
+
+
+                                if (DownloadPDF(urlToDownloadPDF, urlToLocalPDF2))
+                                {
+
+                                    //Get omschrijving from PDF
+                                    string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF2);
+                                    omschrijving = omschrijving.Substring(omschrijving.IndexOf("De Kamer, gehoord de beraadslaging,"));
+                                    omschrijving = omschrijving.Remove(omschrijving.IndexOf("en gaat over tot de orde van de dag.") + 36);
+                                    omschrijving = omschrijving.Replace("'", "''");
+
+                                    //Write data to db
+                                    WriteData(motieID, motieDID, cleanTitle, omschrijving, mensenVoor, dateMotie, votedPositive, votedNegative);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Motie is al gedownload");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Motie is al gedownload");
+                            Console.WriteLine("Geen stemmen voor bekend!");
                         }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Geen stemmen voor bekend!");
-                    }
-                    Console.WriteLine("\n");
+                        Console.WriteLine("\n");
 
+                    }
                 }
             }
+
         }
 
-    }
-
-    //Downloading the PDF to server and C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/ map
-    public static bool DownloadPDF(string urlToDownloadPDF, string DiskUrl)
-    {
-        try
-        {
-            using (var client = new WebClient())
-            {
-                client.DownloadFile(
-                    new System.Uri(urlToDownloadPDF),
-                    DiskUrl
-                );
-            }
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(urlToDownloadPDF);
-            Console.WriteLine("Unable to Download : " + ex.ToString());
-        }
-        return false;
-    }
-
-    //getting the motie from the pdf
-    public static string getOmschrijvingFromPDF(string urlToPDF)
-    {
-        using (var pdf = PdfDocument.Open(urlToPDF))
+        //Downloading the PDF to server and C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/ map
+        static bool DownloadPDF(string urlToDownloadPDF, string DiskUrl)
         {
             try
             {
-                var otherText = "";
+                using (var client = new WebClient())
+                {
+                    client.DownloadFile(
+                        new System.Uri(urlToDownloadPDF),
+                        DiskUrl
+                    );
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(urlToDownloadPDF);
+                Console.WriteLine("Unable to Download : " + ex.ToString());
+            }
+            return false;
+        }
+
+        //getting the motie from the pdf
+        static string getOmschrijvingFromPDF(string urlToPDF)
+        {
+            using (var pdf = PdfDocument.Open(urlToPDF))
+            {
+                try
+                {
+                    var otherText = "";
+                    foreach (var page in pdf.GetPages())
+                    {
+                        // Or the raw text of the page's content stream.
+                        otherText += string.Join(" ", page.GetWords());
+                    }
+    ; return otherText.Replace("'", "''");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    return "Failed";
+                }
+
+            }
+        }
+
+        //Getting the date of the motie from the pdf
+        static DateTime getDateFromPDF(string urlToPDF)
+        {
+            using (var pdf = PdfDocument.Open(urlToPDF))
+            {
                 foreach (var page in pdf.GetPages())
                 {
                     // Or the raw text of the page's content stream.
-                    otherText += string.Join(" ", page.GetWords());
-                }
-;               return otherText.Replace("'", "''");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return "Failed";
-            }
-
-        }
-    }
-
-    //Getting the date of the motie from the pdf
-    public static DateTime getDateFromPDF(string urlToPDF)
-    {
-        using (var pdf = PdfDocument.Open(urlToPDF))
-        {
-            foreach (var page in pdf.GetPages())
-            {
-                // Or the raw text of the page's content stream.
-                var otherText = string.Join(" ", page.GetWords());
+                    var otherText = string.Join(" ", page.GetWords());
 
 
-                int pFrom = otherText.IndexOf("Voorgesteld ") + "Voorgesteld ".Length;
-                int pTo = otherText.LastIndexOf(" De Kamer, ");
+                    int pFrom = otherText.IndexOf("Voorgesteld ") + "Voorgesteld ".Length;
+                    int pTo = otherText.LastIndexOf(" De Kamer, ");
 
-                string motieDate = otherText.Substring(pFrom, pTo - pFrom);
+                    string motieDate = otherText.Substring(pFrom, pTo - pFrom);
 
-                int number;
-                if (int.TryParse(motieDate.First().ToString(), out number))
-                {
-                    try
-                    {
-                        return DateTime.Parse(motieDate);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("PROBLEEM MET PARSEN: " + ex);
-                    }
-                }
-                else
-                {
-                    motieDate = motieDate.Substring(motieDate.IndexOf(" van ") + " van ".Length);
-
-                    int number2;
-                    if (int.TryParse(motieDate.First().ToString(), out number2))
+                    int number;
+                    if (int.TryParse(motieDate.First().ToString(), out number))
                     {
                         try
                         {
@@ -279,58 +265,75 @@ class Program
                     }
                     else
                     {
-                        Console.WriteLine("BEGINT NOG STEEDS FOUT: " + motieDate);
-                        Console.WriteLine();
-                    }
-                }
+                        motieDate = motieDate.Substring(motieDate.IndexOf(" van ") + " van ".Length);
 
-            }
-        }
-        return DateTime.Parse("01 jan 0001");
-    }
-
-    //Writing data to database
-    public static bool WriteData(string id, string did, string title, string description, int stemmenVoor, string motieDatum, string lijstVoor, string lijstTegen)
-    {
-
-        Database db = new Database();
-        string query = "INSERT INTO motie (id, did, title, omschrijving, stemmenVoor, motieDatum, partijVoor, partijTegen) " +
-                        "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum + "', '" + lijstVoor + "', '" + lijstTegen +"');";
-        db.InsertInto(query);
-
-        return true;
-    }
-
-     
-
-
-
-
-
-
-
-    public static string getVotedPositive(HtmlNodeCollection voteTableVoor)
-    {
-        string final = "";
-        if (voteTableVoor != null)
-        {
-            var tableRow = voteTableVoor[0].ChildNodes;
-            foreach (var partyVotedPositive in tableRow)
-            {
-                if (!partyVotedPositive.HasAttributes)
-                {
-                    if (partyVotedPositive.Name.Equals("tr"))
-                    {
-                        foreach (var ta in partyVotedPositive.ChildNodes)
+                        int number2;
+                        if (int.TryParse(motieDate.First().ToString(), out number2))
                         {
-                            if (ta.Name.Equals("td") & ta.ChildNodes.Count > 2)
+                            try
                             {
+                                return DateTime.Parse(motieDate);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("PROBLEEM MET PARSEN: " + ex);
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("BEGINT NOG STEEDS FOUT: " + motieDate);
+                            Console.WriteLine();
+                        }
+                    }
 
-                                if (ta.ChildNodes[1].Name.Equals("span"))
+                }
+            }
+            return DateTime.Parse("01 jan 0001");
+        }
+
+        //Writing data to database
+        static bool WriteData(string id, string did, string title, string description, int stemmenVoor, string motieDatum, string lijstVoor, string lijstTegen)
+        {
+
+            Database db = new Database();
+            string query = "INSERT INTO motie (id, did, title, omschrijving, stemmenVoor, motieDatum, partijVoor, partijTegen) " +
+                            "VALUES('" + id + "', '" + did + "', '" + title + "', '" + description + "', " + stemmenVoor + ", '" + motieDatum + "', '" + lijstVoor + "', '" + lijstTegen + "');";
+            db.InsertInto(query);
+
+            return true;
+        }
+
+
+
+
+
+
+
+
+
+        static string getVotedPositive(HtmlNodeCollection voteTableVoor)
+        {
+            string final = "";
+            if (voteTableVoor != null)
+            {
+                var tableRow = voteTableVoor[0].ChildNodes;
+                foreach (var partyVotedPositive in tableRow)
+                {
+                    if (!partyVotedPositive.HasAttributes)
+                    {
+                        if (partyVotedPositive.Name.Equals("tr"))
+                        {
+                            foreach (var ta in partyVotedPositive.ChildNodes)
+                            {
+                                if (ta.Name.Equals("td") & ta.ChildNodes.Count > 2)
                                 {
-                                    if (!ta.ChildNodes[1].HasAttributes)
+
+                                    if (ta.ChildNodes[1].Name.Equals("span"))
                                     {
-                                        final += ta.ChildNodes[1].InnerHtml + ", ";
+                                        if (!ta.ChildNodes[1].HasAttributes)
+                                        {
+                                            final += ta.ChildNodes[1].InnerHtml + ", ";
+                                        }
                                     }
                                 }
                             }
@@ -338,34 +341,34 @@ class Program
                     }
                 }
             }
+
+            return final;
         }
 
-        return final;
-    }
 
-
-    public static string getVotedNegative(HtmlNodeCollection voteTableTegen)
-    {
-        string final = "";
-        if (voteTableTegen != null)
+        static string getVotedNegative(HtmlNodeCollection voteTableTegen)
         {
-            var tableRow = voteTableTegen[0].ChildNodes;
-            foreach (var partyVotedNegative in tableRow)
+            string final = "";
+            if (voteTableTegen != null)
             {
-                if (!partyVotedNegative.HasAttributes)
+                var tableRow = voteTableTegen[0].ChildNodes;
+                foreach (var partyVotedNegative in tableRow)
                 {
-                    if (partyVotedNegative.Name.Equals("tr"))
+                    if (!partyVotedNegative.HasAttributes)
                     {
-                        foreach (var ta in partyVotedNegative.ChildNodes)
+                        if (partyVotedNegative.Name.Equals("tr"))
                         {
-                            if (ta.Name.Equals("td") & ta.ChildNodes.Count > 2)
+                            foreach (var ta in partyVotedNegative.ChildNodes)
                             {
-
-                                if (ta.ChildNodes[1].Name.Equals("span"))
+                                if (ta.Name.Equals("td") & ta.ChildNodes.Count > 2)
                                 {
-                                    if (!ta.ChildNodes[1].HasAttributes)
+
+                                    if (ta.ChildNodes[1].Name.Equals("span"))
                                     {
-                                        final += ta.ChildNodes[1].InnerHtml + ", ";
+                                        if (!ta.ChildNodes[1].HasAttributes)
+                                        {
+                                            final += ta.ChildNodes[1].InnerHtml + ", ";
+                                        }
                                     }
                                 }
                             }
@@ -373,9 +376,9 @@ class Program
                     }
                 }
             }
+
+            return final;
         }
 
-        return final;
     }
-
 }
