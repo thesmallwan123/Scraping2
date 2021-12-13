@@ -13,26 +13,29 @@ class Program
     //has to be async to await the url
     public static async System.Threading.Tasks.Task Main()
     {
-        string DiskLink = "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/";
+        string DiskLink = "E:/moties/";
 
         //cleanData(DiskLink);
         await getData(DiskLink);
+        
+        
         Console.WriteLine("Scraping has succeeded");
         Environment.Exit(0);
     }
 
-    public static void cleanData(string downloadToDiskURL)
+    public static void cleanData(string DiskLink)
     {
+        Database db = new Database();
         //Clean map moties
         try
         {
-            DirectoryInfo di = new DirectoryInfo(downloadToDiskURL);
+            DirectoryInfo di = new DirectoryInfo(DiskLink);
 
             foreach (FileInfo file in di.GetFiles())
             {
                 file.Delete();
             }
-            if (!Directory.EnumerateFileSystemEntries(downloadToDiskURL).Any())
+            if (!Directory.EnumerateFileSystemEntries(DiskLink).Any())
             {
                 Console.WriteLine("All files removed");
             }
@@ -43,15 +46,10 @@ class Program
         }
 
 
-
-        //Clean DB
+        //Cleaning database
         try
         {
-            Database db = new Database();
-            if (db.TruncateTable())
-            {
-                Console.WriteLine("Database Cleaned");
-            }
+            db.TruncateDatabase();
         }
         catch (Exception e)
         {
@@ -118,12 +116,11 @@ class Program
                     // get global data tabel
                     var mainPageSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[2]/div[1]/section[1]/div[1]/div[2]/div[1]/div[1]/div[1]");
                     var titleSpecificMotie = docSpecificMotie.DocumentNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/section[1]/div[1]/div[1]/div[1]/div[1]/h1");
-
-
+                   
                     // check if votes are in
                     if (mainPageSpecificMotie != null)
                     {
-                        string urlToLocalPDF2 = urlToLocalPDF + motieID + "" + motieDID + ".pdf";
+                        string urlToLocalPDF2 = urlToLocalPDF+ "" + motieID + "" + motieDID + ".pdf";
 
 
                         //If file is not downloaded yet
@@ -134,6 +131,8 @@ class Program
                             //get motietitle
                             string UnConcattedtitle = titleSpecificMotie[0].InnerText;
                             string cleanTitle = UnConcattedtitle.Replace("\n", "").Trim();
+                            cleanTitle = cleanTitle.Replace("'","''");
+                            cleanTitle = string.Join(" ", cleanTitle.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
 
                             //Get votes of motie
                             int mensenVoor = int.Parse(mainPageSpecificMotie[0].ChildNodes[5].Attributes[1].Value);
@@ -158,14 +157,14 @@ class Program
                             string urlToDownloadPDF = urlSpecificMotieBase + urlDownloadPDFButton.Attributes[1].Value;
                             
                             
-                            if (DownloadPDF(urlToDownloadPDF, motieID, motieDID))
+                            if (DownloadPDF(urlToDownloadPDF, urlToLocalPDF2))
                             {
 
                                 //Get omschrijving from PDF
                                 string omschrijving = getOmschrijvingFromPDF(urlToLocalPDF2);
                                 omschrijving = omschrijving.Substring(omschrijving.IndexOf("De Kamer, gehoord de beraadslaging,"));
                                 omschrijving = omschrijving.Remove(omschrijving.IndexOf("en gaat over tot de orde van de dag.") +36);
-
+                                omschrijving = omschrijving.Replace("'","''");
 
                                 //Write data to db
                                 WriteData(motieID, motieDID, cleanTitle, omschrijving, mensenVoor, dateMotie, votedPositive, votedNegative);
@@ -189,7 +188,7 @@ class Program
     }
 
     //Downloading the PDF to server and C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/ map
-    public static bool DownloadPDF(string urlToDownloadPDF, string id, string did)
+    public static bool DownloadPDF(string urlToDownloadPDF, string DiskUrl)
     {
         try
         {
@@ -197,7 +196,7 @@ class Program
             {
                 client.DownloadFile(
                     new System.Uri(urlToDownloadPDF),
-                    "C:/Users/ivar/source/repos/ConsoleApp2/ConsoleApp2/Moties/" + id + "" + did + ".pdf"
+                    DiskUrl
                 );
             }
             return true;

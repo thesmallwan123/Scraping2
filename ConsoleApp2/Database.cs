@@ -1,124 +1,86 @@
 ﻿using System;
+using System.Data.SqlClient;
+using System.Linq;
 using MySql.Data.MySqlClient;
-using System.Collections.Generic;
-using System.Text;
 
 class Database
 {
-    private MySqlConnection connection;
-    private string server;
-    private string database;
-    private string uid;
-    private string password;
-
+    SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
 
     public Database()
     {
-        Initialise();
+        builder.DataSource = "localhost";
+        builder.UserID = "SA";
+        builder.Password = "*&gFaevH#2dba47";
+        builder.InitialCatalog = "Climate_Change_Dashboard";
     }
 
 
-    private void Initialise()
+    public void TruncateDatabase()
     {
-        server = "localhost";
-        database = "motie";
-        uid = "administrator";
-        password = "123";
-        string connectionString = "Server=" + server + ";" + "Database=" +
-        database + ";" + "UID=" + uid + ";" + "Password=" + password + ";";
 
-        connection = new MySqlConnection(connectionString);
-    }
-
-    private bool OpenConnection()
-    {
         try
         {
-            connection.Open();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            return false;
-        }
-    }
-
-    private bool CloseConnection()
-    {
-        try
-        {
-            connection.Clone();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            return false;
-        }
-    }
-
-    public bool TruncateTable()
-    {
-        try
-        {
-            if (OpenConnection())
+            string qr = "TRUNCATE TABLE motie;";
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
             {
-                MySqlCommand sql = new MySqlCommand("TRUNCATE TABLE motie;", connection);
-                sql.ExecuteNonQuery();
-                Console.WriteLine("Succesfully trancuted table");
+                using (SqlCommand command = new SqlCommand(qr, connection))
+                {
+                    connection.Open();
+
+                    command.CommandText = qr;
+                    command.Prepare();
+                    command.ExecuteNonQuery();
+                    
+                    connection.Close();
+
+                }
             }
-            else
-            {
-                Console.WriteLine("Connection was closed");
-                return false;
-            }
-            return true;
+            Console.WriteLine("Truncte was a success");
         }
-        catch (Exception e)
+        catch (MySqlException MysqlEx)
         {
-            Console.WriteLine(e);
-            return false;
+            Console.WriteLine(MysqlEx);
         }
+
     }
+
 
     public bool InsertInto(string qr)
     {
         try
         {
-            if (OpenConnection() == true)
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
             {
-                try
+                using (SqlCommand command = new SqlCommand(qr, connection))
                 {
-                    MySqlCommand command = new MySqlCommand(qr, connection);
+                    connection.Open();
+
+                    command.CommandText = qr;
                     command.Prepare();
                     command.ExecuteNonQuery();
+
+                    Console.WriteLine("Motie Implemented");
+
+                    connection.Close();
+
+                    return true;
                 }
-                catch (MySqlException MysqlEx)
-                {
-                    if (MysqlEx.Number.Equals(1062))
-                    {
-                        Console.WriteLine("Motie was already implemented");
-                        return false;
-                    }
-                    Console.WriteLine(MysqlEx);
-                    this.CloseConnection();
-                    return false;
-                }
-                Console.WriteLine("Inserting was a success");
-                return true;
             }
-            else
+
+        }
+        catch (MySqlException MysqlEx)
+        {
+            if (MysqlEx.Number.Equals(1062))
             {
-                Console.WriteLine("Connection was closed");
+                Console.WriteLine("Motie was already implemented");
                 return false;
             }
-        }
-        catch(Exception ex)
-        {
-            Console.WriteLine(ex);
+            Console.WriteLine(MysqlEx);
             return false;
         }
+        Console.WriteLine("Inserting was a success");
+        return true;
     }
 
 }
